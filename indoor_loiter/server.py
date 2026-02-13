@@ -720,8 +720,12 @@ def main():
     pid_mod_global = None
     pid_cfg_base = None
     pid_cfg_track2d = None
+    pid_cfg_hole = None
+    pid_cfg_plane = None
     pid_dict_base: Optional[dict] = None
     pid_dict_track2d: Optional[dict] = None
+    pid_dict_hole: Optional[dict] = None
+    pid_dict_plane: Optional[dict] = None
     try:
         import pid as pid_mod_global  # type: ignore
 
@@ -731,6 +735,10 @@ def main():
         pid_cfg_base = pid_mod_global.config_from_dict(base_dict)
         pid_cfg_track2d = pid_cfg_base
         pid_dict_track2d = base_dict
+        pid_cfg_hole = pid_cfg_base
+        pid_cfg_plane = pid_cfg_base
+        pid_dict_hole = base_dict
+        pid_dict_plane = base_dict
 
         ovr = cfg.get("2d_tracker_pid", {}) or {}
         if isinstance(ovr, dict) and ovr:
@@ -738,12 +746,30 @@ def main():
             _deep_merge_dict_inplace(merged, dict(ovr))
             pid_cfg_track2d = pid_mod_global.config_from_dict(merged)
             pid_dict_track2d = merged
+
+        ovr_hole = cfg.get("hole_tracker_pid", {}) or {}
+        if isinstance(ovr_hole, dict) and ovr_hole:
+            merged = copy.deepcopy(base_dict)
+            _deep_merge_dict_inplace(merged, dict(ovr_hole))
+            pid_cfg_hole = pid_mod_global.config_from_dict(merged)
+            pid_dict_hole = merged
+
+        ovr_plane = cfg.get("plane_tracker_pid", {}) or {}
+        if isinstance(ovr_plane, dict) and ovr_plane:
+            merged = copy.deepcopy(base_dict)
+            _deep_merge_dict_inplace(merged, dict(ovr_plane))
+            pid_cfg_plane = pid_mod_global.config_from_dict(merged)
+            pid_dict_plane = merged
     except Exception:
         pid_mod_global = None
         pid_cfg_base = None
         pid_cfg_track2d = None
+        pid_cfg_hole = None
+        pid_cfg_plane = None
         pid_dict_base = None
         pid_dict_track2d = None
+        pid_dict_hole = None
+        pid_dict_plane = None
 
     v4l_src = None  # created below when track2d is enabled
 
@@ -936,9 +962,18 @@ def main():
                 except Exception:
                     pass
             else:
-                # Restore base PID settings (mav_control) and allow track3d to drive PID again.
-                if pidmgr is not None and pid_cfg_base is not None and hasattr(pidmgr, "apply_updates"):
-                    pidmgr.apply_updates(pid_cfg_base)
+                # Restore track3d PID settings and allow track3d to drive PID again.
+                # Use per-mode PID tuning if hole/plane acquisition is latched on.
+                pid_cfg_restore = pid_cfg_base
+                try:
+                    if bool(_plane_get_enabled()):
+                        pid_cfg_restore = pid_cfg_plane if pid_cfg_plane is not None else pid_cfg_base
+                    elif bool(_hole_get_enabled()):
+                        pid_cfg_restore = pid_cfg_hole if pid_cfg_hole is not None else pid_cfg_base
+                except Exception:
+                    pid_cfg_restore = pid_cfg_base
+                if pidmgr is not None and pid_cfg_restore is not None and hasattr(pidmgr, "apply_updates"):
+                    pidmgr.apply_updates(pid_cfg_restore)
                 _pid_src_set("track3d" if track3d is not None else "tracker")
                 # Apply latched hole_enable state now that 2D tracking is off (hole_enable may have been suppressed).
                 if track3d is not None:
@@ -2240,7 +2275,16 @@ def main():
                                             else getattr(pidmgr, "_gate_state", None)
                                         )
                                         if str(gate_state or "") == "PID_MOVE":
-                                            thr = _pid_move_max_bbox_area_ratio(pid_dict_base)
+                                            # Per-mode PID tuning: allow different auto-exit thresholds per tracker kind.
+                                            thr_src = pid_dict_base
+                                            try:
+                                                if str(sel_kind0 or "") == "plane":
+                                                    thr_src = pid_dict_plane if pid_dict_plane is not None else pid_dict_base
+                                                elif str(sel_kind0 or "") == "hole":
+                                                    thr_src = pid_dict_hole if pid_dict_hole is not None else pid_dict_base
+                                            except Exception:
+                                                thr_src = pid_dict_base
+                                            thr = _pid_move_max_bbox_area_ratio(thr_src)
                                             if math.isfinite(float(thr)) and float(thr) > 0.0:
                                                 bb = poly.get("bbox", None)
                                                 if isinstance(bb, (list, tuple)) and int(len(bb)) == 4:
@@ -3127,6 +3171,28 @@ def main():
                             mode_changed = (bool(new_hole) != bool(prev_hole)) or (bool(new_plane) != bool(prev_plane))
                             if bool(mode_changed):
                                 _request_video_switch()
+                            # Per-mode PID tuning for track3d (hole vs plane).
+                            # Do not touch PID while the 2D tracker owns the PID source.
+                            if bool(mode_changed) and (not bool(_track2d_is_active())):
+                                try:
+                                    _pid_src_set("track3d" if track3d is not None else "tracker")
+                                except Exception:
+                                    pass
+                                pid_cfg_apply = pid_cfg_base
+                                try:
+                                    if bool(new_plane):
+                                        pid_cfg_apply = pid_cfg_plane if pid_cfg_plane is not None else pid_cfg_base
+                                    elif bool(new_hole):
+                                        pid_cfg_apply = pid_cfg_hole if pid_cfg_hole is not None else pid_cfg_base
+                                    else:
+                                        pid_cfg_apply = pid_cfg_base
+                                except Exception:
+                                    pid_cfg_apply = pid_cfg_base
+                                try:
+                                    if pidmgr is not None and pid_cfg_apply is not None and hasattr(pidmgr, "apply_updates"):
+                                        pidmgr.apply_updates(pid_cfg_apply)
+                                except Exception:
+                                    pass
                             if bool(mode_changed):
                                 # Mark as applied for logs/UI (even though TelemetryManager ignores `type=...` controls).
                                 try:

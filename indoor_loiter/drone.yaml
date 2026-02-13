@@ -381,9 +381,265 @@ mav_control:
       delta_vertical_deg: 1.5     # Stop when |pitch_err| <= this (deg)
 
 # Optional per-tracker PID overrides.
-# When the GUI enables the 2D ROI tracker (`type="track2d_enable"`), the server applies this dict
-# on top of `mav_control` (same schema: PID_MOVE/PID_ALIGN/etc).
-2d_tracker_pid: {}
+# Each dict is merged on top of `mav_control` (same schema: PID_MOVE/PID_ALIGN/etc).
+# Keep these fully specified so each mode can be tuned independently.
+hole_tracker_pid:
+  PID_MOVE:
+    auto_exit:
+      enabled: true
+      max_bbox_area_ratio: 0.80
+    mode_gate:
+      allow_in_alt_hold: true
+      allow_in_pos_hold: false
+      allow_in_all_modes: true
+    pitch:
+      enabled: true
+      kp: 0.55
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.1
+      soft_start_gamma: 0.5
+      enable_gamma: false
+    yaw:
+      enabled: true
+      kp: 1
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.1
+      soft_start_gamma: 1.5
+      enable_gamma: false
+    roll:
+      enabled: false
+      kp: 0.1
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 2.0
+      soft_start_gamma: 1.5
+      enable_gamma: false
+    thrust:
+      enabled: true
+      min_value: 0.0
+      max_value: 0.3
+      ramp_time_s: 0.3
+      down_ramp_time_s: 3.0
+
+  PID_ALIGN:
+    mode_gate:
+      allow_in_alt_hold: true
+      allow_in_pos_hold: false
+      allow_in_all_modes: true
+    pitch:
+      enabled: true
+      kp: 0.55
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.5
+      soft_start_gamma: 0.5
+      enable_gamma: false
+    yaw:
+      enabled: true
+      kp: 1.0
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.6
+      soft_start_gamma: 1.5
+      enable_gamma: true
+    roll:
+      enabled: false
+      kp: 1.0
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.5
+      soft_start_gamma: 1.5
+      enable_gamma: false
+    thrust:
+      enabled: false
+      min_value: 0.0
+      max_value: 0.3
+      ramp_time_s: 0.1
+      down_ramp_time_s: 0.0
+    auto_exit:
+      enabled: false
+      delta_horizontal_deg: 1.5
+      delta_vertical_deg: 1.5
+
+plane_tracker_pid:
+  PID_MOVE:
+    auto_exit:
+      enabled: true
+      max_bbox_area_ratio: 0.80
+    mode_gate:
+      allow_in_alt_hold: true
+      allow_in_pos_hold: false
+      allow_in_all_modes: true
+    pitch:
+      enabled: true
+      kp: 0.55
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.1
+      soft_start_gamma: 0.5
+      enable_gamma: false
+    yaw:
+      enabled: true
+      kp: 1
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.1
+      soft_start_gamma: 1.5
+      enable_gamma: false
+    roll:
+      enabled: false
+      kp: 0.1
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 2.0
+      soft_start_gamma: 1.5
+      enable_gamma: false
+    thrust:
+      enabled: true
+      min_value: 0.0
+      max_value: 0.3
+      ramp_time_s: 0.3
+      down_ramp_time_s: 3.0
+
+  PID_ALIGN:
+    mode_gate:
+      allow_in_alt_hold: true
+      allow_in_pos_hold: false
+      allow_in_all_modes: true
+    pitch:
+      enabled: true
+      kp: 0.55
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.5
+      soft_start_gamma: 0.5
+      enable_gamma: false
+    yaw:
+      enabled: true
+      kp: 1.0
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.6
+      soft_start_gamma: 1.5
+      enable_gamma: true
+    roll:
+      enabled: false
+      kp: 1.0
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.5
+      soft_start_gamma: 1.5
+      enable_gamma: false
+    thrust:
+      enabled: false
+      min_value: 0.0
+      max_value: 0.3
+      ramp_time_s: 0.1
+      down_ramp_time_s: 0.0
+    auto_exit:
+      enabled: false
+      delta_horizontal_deg: 1.5
+      delta_vertical_deg: 1.5
+
+2d_tracker_pid:
+  PID_MOVE:
+    auto_exit:
+      enabled: true
+      max_bbox_area_ratio: 0.80
+    mode_gate:
+      allow_in_alt_hold: true
+      allow_in_pos_hold: false
+      allow_in_all_modes: true
+    pitch:
+      enabled: true
+      kp: 0.55
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.1
+      soft_start_gamma: 0.5
+      enable_gamma: false
+    yaw:
+      enabled: true
+      kp: 1
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.1
+      soft_start_gamma: 1.5
+      enable_gamma: false
+    roll:
+      enabled: false
+      kp: 0.1
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 2.0
+      soft_start_gamma: 1.5
+      enable_gamma: false
+    thrust:
+      enabled: true
+      min_value: 0.0
+      max_value: 0.3
+      ramp_time_s: 0.3
+      down_ramp_time_s: 3.0
+
+  PID_ALIGN:
+    mode_gate:
+      allow_in_alt_hold: true
+      allow_in_pos_hold: false
+      allow_in_all_modes: true
+    pitch:
+      enabled: true
+      kp: 0.55
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.5
+      soft_start_gamma: 0.5
+      enable_gamma: false
+    yaw:
+      enabled: true
+      kp: 1.0
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.6
+      soft_start_gamma: 1.5
+      enable_gamma: true
+    roll:
+      enabled: false
+      kp: 1.0
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.5
+      soft_start_gamma: 1.5
+      enable_gamma: false
+    thrust:
+      enabled: false
+      min_value: 0.0
+      max_value: 0.3
+      ramp_time_s: 0.1
+      down_ramp_time_s: 0.0
+    auto_exit:
+      enabled: false
+      delta_horizontal_deg: 1.5
+      delta_vertical_deg: 1.5
 recorder:
   enable: false
   encoder: nvjpeg
