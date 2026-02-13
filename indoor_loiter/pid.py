@@ -718,6 +718,16 @@ def config_from_dict(data: Optional[Dict[str, Any]]) -> MavControlCfg:
             except Exception:
                 d["pid_align"] = dict(d["pid_move"])
 
+        # Symmetric: if PID_MOVE is omitted but PID_ALIGN exists, default PID_MOVE to PID_ALIGN (copy).
+        # This helps partial configs (e.g. per-tracker overrides) remain robust.
+        if "pid_move" not in d and isinstance(d.get("pid_align"), dict):
+            try:
+                from copy import deepcopy
+
+                d["pid_move"] = deepcopy(d["pid_align"])
+            except Exception:
+                d["pid_move"] = dict(d["pid_align"])
+
         # Back-compat: rc_gate.threshold -> binary gating (no ALIGN state).
         try:
             rg = d.get("rc_gate")
