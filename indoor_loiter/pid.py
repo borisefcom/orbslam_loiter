@@ -263,14 +263,60 @@ class PidManager:
         sent = False
         reason = ""
 
+        def _emit_pid_debug(*, sent_override: Optional[bool] = None, reason_override: Optional[str] = None) -> None:
+            if not self.emit_debug_json:
+                return
+            sent0 = bool(sent) if sent_override is None else bool(sent_override)
+            reason0 = str(reason) if reason_override is None else str(reason_override)
+            try:
+                rad2deg0 = 180.0 / 3.141592653589793
+                yaw_err_deg0 = (yaw_err * rad2deg0) if yaw_err is not None else None
+                pitch_err_deg0 = (pitch_err * rad2deg0) if pitch_err is not None else None
+            except Exception:
+                yaw_err_deg0 = None
+                pitch_err_deg0 = None
+            dbg = {
+                "type": "pid_debug",
+                "t_ms": int(time.time() * 1000),
+                "state": m.state,
+                "gate_state": gate_state,
+                "mode": mode_str,
+                "mode_bucket": mode_bucket,
+                "rc_ch_norm": rc_norm,
+                "gate": {
+                    "rc": gate_rc,
+                    "mode": gate_mode_ok,
+                },
+                "measurement": {
+                    "yaw_err_rad": yaw_err,
+                    "pitch_err_rad": pitch_err,
+                    "yaw_err_deg": yaw_err_deg0,
+                    "pitch_err_deg": pitch_err_deg0,
+                    "track_id": m.track_id,
+                },
+                "result": {
+                    "pitch": round(pitch_cmd, 6),
+                    "roll": round(roll_cmd, 6),
+                    "yaw": round(yaw_cmd, 6),
+                    "thrust": round(thrust_cmd, 6),
+                    "sent": sent0,
+                    "reason": reason0,
+                },
+            }
+            try:
+                self.emit_debug_json(dbg)
+            except Exception:
+                pass
+
         if not self.cfg.enable:
             reason = "disabled"
             self._gate_prev = False
             self._ramp_t0 = None
             self._reset_limiters(hard=True)
         else:
-            # OFF state: suppress PID loop and PID messages entirely.
+            # OFF state: suppress MANUAL_CONTROL, but still emit pid_debug JSON for visibility.
             if gate_state == "OFF":
+                reason = "gate_off"
                 if self._gate_state != "OFF" or self._gate_prev:
                     self._reset_limiters(hard=True)
                     self._ramp_t0 = None
@@ -288,12 +334,13 @@ class PidManager:
                             "mode": "",
                             "mode_bucket": "ANY",
                             "state": str(m.state),
-                            "reason": "gate_off",
+                            "reason": str(reason),
                             "sent": False,
                         }
                     )
                 except Exception:
                     pass
+                _emit_pid_debug(sent_override=False)
                 return
 
             # Track gate-state transitions (ALIGN/MOVE) and reset latch when leaving/entering ALIGN.
@@ -307,6 +354,8 @@ class PidManager:
 
             # ALIGN complete latch: once done, remain silent until the user changes the switch.
             if gate_state == "PID_ALIGN" and self._align_done:
+                reason = "align_done"
+                gate_rc = True
                 try:
                     _last_gate_status.update(
                         {
@@ -318,16 +367,37 @@ class PidManager:
                             "mode": "",
                             "mode_bucket": "ANY",
                             "state": str(m.state),
-                            "reason": "align_done",
+                            "reason": str(reason),
                             "sent": False,
                         }
                     )
                 except Exception:
                     pass
+                _emit_pid_debug(sent_override=False)
                 return
 
             prof = self._active_profile(gate_state)
             if prof is None:
+                reason = "no_profile"
+                gate_rc = True
+                try:
+                    _last_gate_status.update(
+                        {
+                            "gate_state": str(gate_state),
+                            "rc_norm": float(rc_norm),
+                            "gate_rc": bool(gate_rc),
+                            "gate_mode": False,
+                            "gate_now": False,
+                            "mode": "",
+                            "mode_bucket": "ANY",
+                            "state": str(m.state),
+                            "reason": str(reason),
+                            "sent": False,
+                        }
+                    )
+                except Exception:
+                    pass
+                _emit_pid_debug(sent_override=False)
                 return
 
             # Update per-profile rates (cheap; just assigns floats).
@@ -443,39 +513,7 @@ class PidManager:
         yaw_err_deg = (yaw_err * rad2deg) if yaw_err is not None else None
         pitch_err_deg = (pitch_err * rad2deg) if pitch_err is not None else None
 
-        if self.emit_debug_json:
-            dbg = {
-                "type": "pid_debug",
-                "t_ms": int(time.time() * 1000),
-                "state": m.state,
-                "gate_state": gate_state,
-                "mode": mode_str,
-                "mode_bucket": mode_bucket,
-                "rc_ch_norm": rc_norm,
-                "gate": {
-                    "rc": gate_rc,
-                    "mode": gate_mode_ok,
-                },
-                "measurement": {
-                    "yaw_err_rad": yaw_err,
-                    "pitch_err_rad": pitch_err,
-                    "yaw_err_deg": yaw_err_deg,
-                    "pitch_err_deg": pitch_err_deg,
-                    "track_id": m.track_id,
-                },
-                "result": {
-                    "pitch": round(pitch_cmd, 6),
-                    "roll": round(roll_cmd, 6),
-                    "yaw": round(yaw_cmd, 6),
-                    "thrust": round(thrust_cmd, 6),
-                    "sent": sent,
-                    "reason": reason,
-                },
-            }
-            try:
-                self.emit_debug_json(dbg)
-            except Exception:
-                pass
+        _emit_pid_debug()
         # Console debug (lightly rate-limited)
         now_print = time.time()
         if (now_print - self._last_dbg_print) >= 1:
