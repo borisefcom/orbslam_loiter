@@ -1,0 +1,240 @@
+# ORB-SLAM3 "track3d" config for indoor_loiter staging.
+#
+# This file is consumed by:
+#   `orbslam/apps/realsense_orbslam3_rgbd_inertial_minimal.py --config <this> --headless`
+#
+# It follows the same high-level shape as Drone_client's 3d_track YAML, but:
+#   - VO is produced by ORB-SLAM3 (RGB-D-Inertial).
+#   - Headless JSONL I/O + SHM ring outputs are enabled for indoor_loiter/server.py.
+#   - PX4 serial output is disabled here (indoor_loiter handles PX4 injection if desired).
+
+px4:
+  enabled: false
+  serial: ""
+  baud: 921600
+  dialect: "common"
+  mavlink2: true
+  heartbeat_hz: 0.0
+  status_hz: 0.0
+  rates_hz: {}
+  odom:
+    enabled: false
+    rate_hz: 0.0
+
+logging:
+  odom_log:
+    enabled: false
+    path: "logs/odom_debug.log"
+    rate_hz: 10.0
+
+app:
+  headless_io:
+    enabled: true
+    telemetry_rate_hz: 30.0
+    transport: stdio_jsonl
+    stdin_enabled: true
+    stdout_enabled: true
+    max_in_per_tick: 50
+    features_rate_hz: 30.0
+    features_compact: true
+    max_tracks: 120
+
+  # Polygon / "hole" tracker settings.
+  # These keys are kept compatible with Drone_client's `3d_track` pipeline:
+  # - `poly_process`: hole detector + process controls
+  # - `poly_vo_lk_track`: VO-projection + LK edge-point lock
+  poly_process:
+    enabled: true
+    every_n_frames: 1
+    cmd_q_max: 8
+    out_q_max: 2
+    drop_frames: true
+    idle_sleep_s: 0.002
+    max_gap_frames: 8
+    canny_lo: 60
+    canny_hi: 140
+    dilate_edges: true
+    # Stage-1 micro-refinement: snap polygon vertices along local edge normals (strict per-update displacement clamp).
+    stage1_edge_snap:
+      enabled: true
+      search_px: 12
+      max_step_px: 1.5
+      canny_lo: 60
+      canny_hi: 140
+      canny_L2gradient: true
+      blur_ksize: 5
+      sobel_ksize: 3
+      edge_bonus: 2000.0
+      grad_weight: 1.0
+      min_score_improve: 0.0
+    hole_preview_enabled: true
+    hole_preview_rate_hz: 10.0
+    hole_preview_alpha: 0.35
+    hole_preview_hold_s: 0.33
+    hole_window_wh: [0, 0]
+    hole_min_area_px: 25.0
+    # If true, treat invalid depth (0) as free-space during hole detection.
+    hole_unknown_as_full: false
+    hole_select_snap_px: 32
+    hole_preview_snap_px: 0
+    hole_lock_snap_px: 12
+    hole_depth_r_px: 16
+    hole_pid_min_radius_m: 0.55
+    hole_done_enabled: false
+    hole_done_fill_ratio: 0.95
+    hole_refine_rate_hz: 10.0
+    hole_spatial:
+      iterations: 0
+      radius_px: 1
+      delta_m: 0.02
+      alpha: 0.0
+    hole_leak_guard:
+      enabled: true
+      open_max_px: 6
+      border_fill_frac: 0.25
+      full_fill_frac: 0.95
+    hole_plane_sector:
+      count: 6
+      min_frac: 0.70
+    hole_plane_normals:
+      enabled: true
+      step_px: 5
+      min_mag: 0.45
+      max_angle_deg: 40.0
+      min_valid_frac: 0.15
+    hole_edge_barrier:
+      enabled: true
+      mode: unknown
+      method: laplace
+      canny_lo: 60
+      canny_hi: 140
+      canny_L2gradient: true
+      laplace_ksize: 3
+      threshold: 25
+      morph_ksize: 2
+      morph_iter: 1
+      dilate_px: 2
+    # Polygon fit params.
+    poly_concavity_max: 0.15
+    poly_min_vertex_angle_deg: 45.0
+    poly_min_edge_len_px: 10.0
+    poly_max_vertices: 18
+    poly_approx_eps_frac: 0.03
+    # Hole-mask polygon fit overrides.
+    hole_poly_concavity_max: 0.15
+    hole_poly_min_vertex_angle_deg: 30.0
+    hole_poly_min_edge_len_px: 6.0
+    hole_poly_max_vertices: 32
+    hole_poly_approx_eps_frac: 0.012
+    # Stage-0 -> Stage-1 auto selection (locks the first valid preview polygon under the hover cursor).
+    auto_lock:
+      enabled: true
+      kind: hole  # hole|plane|both|all
+      cooldown_s: 0.5
+    # Stage-1 -> Stage-2 transition (PID confirm). Default is manual (GUI sends confirm).
+    stage2_transition:
+      mode: manual  # manual|roi_fill
+      roi_fill_frac: 0.65
+      cooldown_s: 0.5
+      require_ok: true
+    # Optional: VO-agnostic ORB/Line acquisition side-channel (for future reseed/recovery/debug).
+    feature_acquire:
+      enabled: false
+      rate_hz: 5.0
+      stage1: true
+      stage2: true
+      on_select: true
+      on_confirm: true
+      publish_orb: false
+      publish_max_orb: 120
+      publish_lines: false
+      publish_max_lines: 40
+      band:
+        mode: both  # both|outside|inside
+        outer_px: 16
+        inner_px: 8
+      orb:
+        enabled: true
+        nfeatures: 600
+        max_matches: 200
+        ratio_test: 0.75
+        ransac_reproj_thresh_px: 3.0
+        ransac_confidence: 0.99
+        min_inliers: 12
+      lines:
+        enabled: false
+        min_length_px: 25.0
+        refine: 1
+
+  poly_vo_lk_track:
+    enabled: true
+    points_min: 50
+    points_step: 50
+    points_max: 500
+    min_fit_inliers: 6
+    success_ratio_low: 0.30
+    success_ratio_high: 0.60
+    accept_keep_ratio_min: 0.20
+    lk_win: 31
+    lk_levels: 4
+    lk_min_eig: 0.0001
+    fb_thresh_px: 2.0
+    pred_gate_px: 25.0
+    # If false: do LK from prev->cur without VO-projected initial guess (more stable when VO projection is wrong/jumpy).
+    lk_use_initial_flow: true
+    ncc_r_px: 4
+    ncc_min: 0.60
+    depth_gate_enabled: true
+    depth_r_px: 2
+    depth_prior_rel: 0.15
+    depth_prior_abs: 0.10
+    plane_cancel_enabled: true
+    plane_dist_thr_m: 0.05
+    plane_bad_count: 2
+    plane_reseed_enabled: true
+    plane_reseed_min_alive: 30
+    plane_reseed_cooldown_s: 0.75
+    plane_reseed_edge_offset_px: 12.0
+    ransac_px: 3.0
+    min_inlier_ratio: 0.15
+    corr_ema_alpha: 0.50
+    corr_decay_half_life_s: 0.50
+    fill_requires_lock: true
+    show_lock_points: true
+    debug_log: true
+
+capture:
+  fps: 30
+  out_width: 640
+  out_height: 480
+  # Tracking video stream: color for RGB, infra1 for global-shutter IR.
+  rs_color_stream: infra1   # color|infra1
+  # Depth visualization published into the SHM ring `depth_bgr` slot (for streaming/debug).
+  # Used by indoor_loiter to switch the GUI stream between IR and depth.
+  depth_vis_enabled: true
+  depth_vis_max_m: 6.0
+  depth_vis_invert: true
+  # RealSense time domain / IMU correction toggles (optional).
+  rs_global_time_enabled: false     # auto|true|false
+  rs_enable_motion_correction: auto # auto|true|false
+  # Deterministic SHM name prefix for external consumers.
+  shm_name_prefix: loiter_rs
+  # SHM ring slots; "auto" uses fps/2 (~0.5s history).
+  shm_slots: auto
+  # If true, best-effort unlink stale segments on startup.
+  shm_force_unlink: true
+  # If true, unlink SHM segments on exit.
+  shm_unlink_on_exit: true
+  # Optional override for IMU SHM prefix (defaults to "<shm_name_prefix>_imu").
+  shm_imu_name_prefix: ""
+  enable_imu: true
+  imu_slots: 8192
+
+# Shared-memory VO pose publisher (Drone_client ipc/shm_state.py compatible).
+ipc_vo:
+  enabled: true
+  # Optional override; when empty we derive "<capture.shm_name_prefix>_orb_state".
+  name_prefix: ""
+  unlink_on_exit: true
+  # Where the state spec JSON is written (relative paths are relative to repo root).
+  out_spec_path: ".tmp/orb_vo_ipc_state_spec.json"

@@ -1,0 +1,95 @@
+# PX4 MAVLink settings for realsense_rgbd_inertial_topview.py
+# Usage: pass values via CLI flags (this file is a reference/config template).
+px4:
+  enabled: true
+  serial: "COM5"
+  baud: 921600
+  dialect: "common"
+  mavlink2: true
+  heartbeat_hz: 1.0
+  status_hz: 1.0
+  rates_hz:
+    RAW_IMU: 100.0
+    HIGHRES_IMU: 0.0
+  calib:
+    window_s: 1.5
+    timeout_s: 10.0
+  odom:
+    enabled: true
+    rate_hz: 30.0
+logging:
+  odom_log:
+    enabled: true
+    path: "logs/odom_debug.log"
+    rate_hz: 10.0
+
+# 3d_track-compatible shared-memory outputs (used by realsense_orbslam3_rgbd_inertial_minimal.py).
+app:
+  headless_io:
+    enabled: true
+    telemetry_rate_hz: 30.0
+    transport: stdio_jsonl
+    stdin_enabled: true
+    stdout_enabled: true
+    max_in_per_tick: 50
+    features_rate_hz: 30.0
+    features_compact: true
+    max_tracks: 120
+  # Map->odom continuity (steady VO pose); tune for your max speed/fps.
+  orbslam_frames:
+    jump_trans_m: 0.10   # meters
+    jump_rot_deg: 7.0    # degrees
+  # Polygon / "hole" tracker settings (in-process; uses ORB-SLAM3 Twc as VO input).
+  # For parity with Drone_client we reuse the `poly_process` key even though no subprocess is spawned here.
+  poly_process:
+    enabled: true
+    hole_preview_enabled: true
+    hole_preview_rate_hz: 10.0
+    hole_preview_hold_s: 0.60
+    hole_window_wh: [0, 0]
+    hole_min_area_px: 25.0
+    # If true, treat invalid depth (0) as free-space during hole detection.
+    hole_unknown_as_full: false
+    hole_select_snap_px: 32
+    hole_depth_r_px: 8
+    hole_pid_min_radius_m: 0.55
+    hole_done_enabled: false
+    hole_done_fill_ratio: 0.95
+    # Shared polygon fit + edge barrier params.
+    canny_lo: 60
+    canny_hi: 140
+    dilate_edges: true
+    hole_poly_concavity_max: 0.15
+    hole_poly_approx_eps_frac: 0.03
+    hole_poly_max_vertices: 18
+capture:
+  # Requested video capture settings (used by realsense_orbslam3_rgbd_inertial_minimal.py).
+  fps: 30
+  out_width: 640
+  out_height: 480
+  # Tracking video stream: color for RGB, infra1 for global-shutter IR.
+  rs_color_stream: infra1   # color|infra1
+  # RealSense time domain / IMU correction toggles (optional).
+  rs_global_time_enabled: false     # auto|true|false
+  rs_enable_motion_correction: auto # auto|true|false
+  # Deterministic SHM name prefix for external consumers.
+  shm_name_prefix: loiter_rs
+  # SHM ring slots; "auto" uses fps/2 (~0.5s history).
+  shm_slots: auto
+  # If true, best-effort unlink stale segments on startup.
+  shm_force_unlink: true
+  # If true, unlink SHM segments on exit.
+  shm_unlink_on_exit: true
+  # Optional override for IMU SHM prefix (defaults to "<shm_name_prefix>_imu").
+  shm_imu_name_prefix: ""
+  enable_imu: true
+  imu_slots: 8192
+
+# Shared-memory VO pose publisher (Drone_client ipc/shm_state.py compatible).
+ipc_vo:
+  enabled: true
+  # Optional override; when empty we derive "<capture.shm_name_prefix>_orb_state".
+  name_prefix: ""
+  unlink_on_exit: true
+  # Where the state spec JSON is written (relative paths are relative to repo root).
+  out_spec_path: ".tmp/orb_vo_ipc_state_spec.json"

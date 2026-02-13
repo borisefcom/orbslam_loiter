@@ -1,0 +1,55 @@
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+*.dll
+*.dylib
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Virtual envs
+.venv/
+venv/
+
+# --- Logs / runtime artifacts ---
+*.log
+*.pid
+*.tmp
+indoor_loiter/logs/
+indoor_loiter/_rpi_logs/
+orbslam/logs/
+orbslam/.tmp/
+_rpi_fps_detail.log
+.tmp_pw.txt
+
+# Payloads / backups
+*.tgz
+*.tar.gz
+*.zip
+
+# Keep the ORB vocabulary archive (used by setup scripts to reconstruct ORBvoc.txt).
+!orbslam/third_party/ORB_SLAM3_pybind/Vocabulary/ORBvoc.txt.tar.gz
+
+# --- ORB-SLAM3 pybind build artifacts (platform-specific) ---
+orbslam/third_party/ORB_SLAM3_pybind/build/
+orbslam/third_party/ORB_SLAM3_pybind/python_wrapper/*.pyd
+orbslam/third_party/ORB_SLAM3_pybind/python_wrapper/*.so
+orbslam/third_party/ORB_SLAM3_pybind/python_wrapper/*.dll
+orbslam/third_party/ORB_SLAM3_pybind/python_wrapper/*.lib
+orbslam/third_party/ORB_SLAM3_pybind/python_wrapper/*.exp
+
+# ORB vocabulary is >100MB (GitHub limit). Keep the compressed version instead.
+orbslam/third_party/ORB_SLAM3_pybind/Vocabulary/ORBvoc.txt
+
+# Example datasets / evaluation assets (not needed for drone runtime)
+orbslam/third_party/ORB_SLAM3_pybind/Examples/**/TUM_IMU/
+orbslam/third_party/ORB_SLAM3_pybind/Examples_old/**/TUM_IMU/
+orbslam/third_party/ORB_SLAM3_pybind/evaluation/

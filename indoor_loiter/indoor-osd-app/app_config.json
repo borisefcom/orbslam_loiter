@@ -1,0 +1,133 @@
+{
+  "mavlink": {
+    "endpoint": "udpin:0.0.0.0:14550"
+  },
+  "video": {
+    "source": "rtsp",
+    "framerate": "60/1",
+    "codec": "h265",
+    "udp_port": 5600,
+    "rtsp_url": "rtsp://10.92.44.50:8554/stream",
+    "rtsp_autodetect": true,
+    "rtsp_codec": "h264",
+    "width": 1280,
+    "height": 720,
+    "format": "NV12",
+    "flip_v": false,
+    "flip_h": false,
+    "widgets": [
+      {
+        "enabled": false,
+        "x": 1540,
+        "y": 140,
+        "size_px": [
+          360,
+          202
+        ],
+        "stream": {
+          "source": "rtsp",
+          "framerate": "60/1",
+          "codec": "h265",
+          "udp_port": 5601,
+          "rtsp_url": "rtsp://192.168.68.68:8554/tr",
+          "rtsp_autodetect": true,
+          "rtsp_codec": "h264",
+          "width": 1280,
+          "height": 720,
+          "format": "NV12",
+          "flip_v": false,
+          "flip_h": false
+        }
+      },
+      {
+        "enabled": false,
+        "x": 1540,
+        "y": 372,
+        "size_px": [
+          360,
+          202
+        ],
+        "stream": {
+          "source": "videotest",
+          "framerate": "60/1",
+          "codec": "h265",
+          "udp_port": 5602,
+          "rtsp_url": "",
+          "rtsp_autodetect": true,
+          "rtsp_codec": "auto",
+          "width": 1280,
+          "height": 720,
+          "format": "NV12",
+          "flip_v": false,
+          "flip_h": false
+        }
+      },
+      {
+        "enabled": false,
+        "x": 1540,
+        "y": 604,
+        "size_px": [
+          360,
+          202
+        ],
+        "stream": {
+          "source": "videotest",
+          "framerate": "60/1",
+          "codec": "h265",
+          "udp_port": 5603,
+          "rtsp_url": "",
+          "rtsp_autodetect": true,
+          "rtsp_codec": "auto",
+          "width": 1280,
+          "height": 720,
+          "format": "NV12",
+          "flip_v": false,
+          "flip_h": false
+        }
+      }
+    ]
+  },
+  "control": {
+    "ctrl_ip": "10.92.44.50",
+    "ctrl_port": 6020,
+    "enable_roi_select": false,
+    "dest_ip": "",
+    "dest_port": 5600,
+    "telemetry_ip": "",
+    "telemetry_port": 6021,
+    "mavlink_ip": "",
+    "mavlink_port": 14550,
+    "bitrate_kbps": 1000,
+    "rc_mode": "CBR",
+    "gop": 16,
+    "fps": 60,
+    "width": 1280,
+    "height": 720,
+    "cam_res_id": 3,
+    "stream_method": "UDP_UNICAST",
+    "hole_detector_enabled": true
+  },
+  "ui": {
+    "cursor_autohide_seconds": 0
+  },
+  "debug": {
+    "json_logging": {
+      "enabled": false,
+      "print_lifecycle": false,
+      "print_send_skip": false,
+      "recv_raw": false,
+      "send_raw": false,
+      "type_summary": false,
+      "types": {
+        "*": false,
+        "pose": false,
+        "cellular": false,
+        "sys": false,
+        "detect": false,
+        "track_status": false,
+        "pid_debug": false,
+        "vo_features": false
+      }
+    }
+  }
+}

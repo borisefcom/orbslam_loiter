@@ -1,0 +1,393 @@
+logging:
+  single_csv:
+    enabled: false
+    path: ./logs/telemetry.csv
+    rotate_bytes: 10000000
+    include:
+      json:
+        pose: true
+        cellular: false
+      px4:
+        HEARTBEAT: false
+        ATTITUDE: false
+        GLOBAL_POSITION_INT: false
+        VFR_HUD: false
+control:
+  json_in: 0.0.0.0:6020
+telemetry:
+  json:
+    pose_hz: 10.0
+    cellular_hz: 0.0
+    sys_hz: 2.0
+    udp: 192.168.68.65:6021
+    max_bytes: 1200   # Max UDP JSON datagram bytes (avoid fragmentation); <=0 disables
+px4:
+  enabled: true    # PX4 connected: enable MAVLink serial bridge
+  serial: /dev/serial0
+  baud: 115200
+  mirror:
+    enabled: true
+    udp: 192.168.68.65:14550
+  params:
+    RC_OVERRIDE_TIME: 0.1
+  rates_hz:
+    # ---- Core / always useful ----
+    HEARTBEAT: 1               # Vehicle presence, mode, arming state
+    SYS_STATUS: 1              # Volt/amps, load, error flags
+    SYSTEM_TIME: 1             # System/UTC time sync (boot/UNIX)
+
+    # ---- GPS / Global position ----
+    GPS_RAW_INT: 5             # Raw GPS: lat/lon/alt/fix/sats/vel
+    GPS2_RAW: 5                # Second GPS raw stream
+    GLOBAL_POSITION_INT: 10    # EKF fused global position (lat/lon/alt, vNED)
+    VFR_HUD: 5                 # Airspeed/groundspeed/alt/climb/heading
+
+    # ---- Attitude / EKF status ----
+    ATTITUDE: 10               # Euler attitude from EKF
+    EKF_STATUS_REPORT: 1       # EKF variances and flags
+    EXTENDED_SYS_STATE: 1      # VTOL, landing state, nav state
+
+    # ---- IMU / Sensors (heavy; keep off unless needed) ----
+    HIGHRES_IMU: 0             # High-rate IMU (accel/gyro/mag/press)
+    SCALED_PRESSURE: 0         # Barometer #1 pressure/temp
+    DISTANCE_SENSOR: 10        # Downward rangefinder (height above ground), used for 2D tracker auto-exit
+
+    # ---- Local position / odometry / vision ----
+    LOCAL_POSITION_NED: 10     # Local position in NED frame
+
+    # ---- Mission / nav / setpoints ----
+    MISSION_CURRENT: 1             # Current mission item index
+    POSITION_TARGET_GLOBAL_INT: 2  # Setpoint global (guided/posctrl)
+    POSITION_TARGET_LOCAL_NED: 2   # Setpoint local NED
+
+    # ---- Home / altitude / terrain / fence ----
+    HOME_POSITION: 0.2         # Home location snapshot
+    ALTITUDE: 1                # Altitude breakdown (amsl, rel, terrain)
+
+    # ---- RC / servos ----
+    # Use existing
+    RC_CHANNELS: 20
+    SERVO_OUTPUT_RAW: 5
+
+    # ---- Power / health ----
+    BATTERY_STATUS: 1          # Battery pack(s) state
+    POWER_STATUS: 0.2          # Power module flags
+
+    # ---- Time sync ----
+    TIMESYNC: 5                # Companion FC clock sync
+
+    # ---- Optional / debug ----
+    SCALED_IMU2: 0
+    SCALED_IMU3: 0
+    RAW_IMU: 0
+    SCALED_PRESSURE2: 0
+    SCALED_PRESSURE3: 0
+    WIND: 1
+    LOCAL_POSITION_NED_COV: 0
+    ATTITUDE_QUATERNION: 0
+    AHRS2: 0
+    AHRS3: 0
+    NAV_CONTROLLER_OUTPUT: 0
+    NAMED_VALUE_FLOAT: 0
+    STATUSTEXT: 0
+
+  # External-vision pose injection to PX4 (MAVLink VISION_POSITION_ESTIMATE, msg 102).
+  # This is independent from the PID -> MANUAL_CONTROL path.
+  vision_position_estimate:
+    enabled: true
+    rate_hz: 30.0
+    # Pose source is selected by the server (currently VO from track3d).
+    source: track3d
+    # Do not send if the VO pose is stale (prevents feeding an old pose when VO stalls).
+    stale_timeout_s: 0.2
+    require_ok: true
+    require_stable: false
+    # Axis mapping from VO position -> PX4 vision position (allow swaps for ENU/NED/camera frames).
+    axis_map:
+      x: x
+      y: y
+      z: z
+    # Axis sign mapping from VO position -> PX4 vision position.
+    axis_sign:
+      x: 1.0
+      y: 1.0
+      z: 1.0
+    # Position scaling before sending to PX4 (1.0 if VO is meters; 0.01 if VO is centimeters).
+    pos_scale: 1.0
+    # Yaw mapping: yaw_rad_px4 = yaw_sign * radians(yaw_deg_vo + yaw_offset_deg)
+    yaw_sign: 1.0
+    yaw_offset_deg: 0.0
+    # MAVLink2 extensions:
+    # - covariance_unknown=true: send covariance[0]=NaN (all other values 0) to mark covariance as unknown.
+    # - reset_counter: keep constant for now (no BA / resets exposed yet).
+    covariance_unknown: true
+    reset_counter: 0
+
+video:
+  source: realsense
+  width: 640
+  height: 480
+  fps: 30
+  stream_enable: true
+  codec: h264
+  encoder: software   # software H.264 (x264enc) for low-latency indoor test
+  stream_method: rtsp
+  # When using the external 3D tracker pipeline, the server streams from shared memory (no direct RealSense access).
+  external_capture: true
+  # Raw pixel format expected from the external shared-memory source.
+  # Use "gray8" for the IR1-only mono pipeline to avoid gray->BGR conversions in Python.
+  external_raw_format: gray8
+  auto_switch:
+    # Debounce tracker-mode -> stream switching (seconds).
+    # Prevents transient rgb/ir flips during rapid enable packets (GUI sends 3 toggles back-to-back).
+    debounce_s: 0.12
+  rtsp:
+    port: 8554
+    path: stream
+    bind: 0.0.0.0
+  bitrate_kbps: 4000
+  iframeinterval: 30
+  idrinterval: 30
+  rc_mode: CBR
+  udp_sink: 192.168.68.65:5600
+camera:
+  type: realsense
+  width: 640
+  height: 480
+  fps: 30
+  mount:
+    pitch_deg: 0.0  # deprecated/ignored (no mount angle correction; center target => 0°)
+  realsense:
+    width: 640
+    height: 480
+    fps: 30
+    imu:
+      units: rad_s
+      accel_invert: true  # RealSense accel is specific force; invert to gravity-down for IMU fusion
+      map:
+        x: x
+        y: y
+        z: z
+    preprocess:
+      sharpen_enable: true
+      amount: 0.3
+      sigma: 1.0
+
+  # Non-RealSense tracking camera (USB/V4L2, typically Arducam OV9281).
+  # Used by `track2d_shim.py` via `v4l_mjpeg_source.py`.
+  v4l:
+    # Use "auto" to prefer a stable non-RealSense `/dev/v4l/by-id/*video-index0` device (e.g. Arducam OV9281).
+    # You can also pin it explicitly to a `/dev/v4l/by-id/...` symlink or `/dev/videoN`.
+    device: auto
+    width: 640
+    height: 480
+    fps: 100
+    fourcc: MJPG
+    # Backend selection for capture+decode:
+    #   - auto: try GStreamer MJPEG decode first, fall back to OpenCV/V4L2
+    #   - gstreamer: force GStreamer first (still falls back if unavailable)
+    #   - v4l2: OpenCV CAP_V4L2 only
+    backend: auto
+    frame_kind: gray     # gray | bgr (gray is faster for DynMedianFlow)
+    v4l2ctl_set_format: true
+    v4l2ctl_set_fps: true
+    # Optional best-effort controls applied via v4l2-ctl before opening with OpenCV.
+    # controls:
+    #   exposure_auto: 1
+    #   exposure_absolute: 60
+    intrinsics:
+      # If these were calibrated at a different resolution, set width/height and the server scales.
+      width: 640
+      height: 480
+      fx: 550.36625
+      fy: 549.62426
+      cx: 309.31069
+      cy: 256.46328
+imu:
+  enabled: false
+  calibrate_on_start: true
+  calib_seconds: 3.0
+  gyro_scale: 1.0
+  accel_scale: 1.0
+# External 3D tracker (RealSense RGB-D + IMU) running headless.
+# This staging tree uses ORB-SLAM3 as the *only* VO source (replaces Drone_client/3d_track).
+# The server spawns it and bridges:
+# - client mouse_move/mouse_click -> tracker stdin JSONL commands
+# - tracker preview/telemetry/pid -> server UDP JSON overlays + existing PID->MAVLink
+track3d:
+  enabled: true
+  workdir: ../orbslam
+  script: apps/realsense_orbslam3_rgbd_inertial_minimal.py
+  config: apps/orbslam_track3d.yaml
+  init_timeout_s: 30.0
+  auto_exit:
+    # Plane tracker: stop PID when close enough to the selected plane patch (meters). Set <=0 to disable.
+    plane_min_range_m: 2.0
+  # Auto-stop if the tracked polygon spans too much of the image (safety against drift / bad lock).
+  # Triggers when (poly bbox width >= frac*W) OR (poly bbox height >= frac*H).
+  poly_stop_extent_frac: 0.95
+  features:
+    # Max feature points sent in `type=vo_features` (UDP JSON).
+    # Set <=0 to send all points (debug; may increase packet size / UDP loss).
+    max_pts: 0
+    # When sending many points, split into multiple `vo_features` packets of this size
+    # (GUI reassembles). Keeps each UDP datagram small to avoid WiFi fragmentation loss.
+    chunk_pts: 60
+
+# Lightweight 2D ROI tracker (DynMedianFlow) used to drive PID from a rectangle selection.
+# Uses the non-RealSense tracking camera under `camera.v4l`.
+track2d:
+  enabled: true
+  auto_exit:
+    # Stop 2D ROI tracking if the downward height rangefinder reports we are too close to the ground (meters).
+    # Set <=0 to disable.
+    min_rangefinder_m: 0.25
+    # Ignore stale rangefinder readings (seconds). Set <=0 to accept any age.
+    rangefinder_max_age_s: 0.5
+
+debug:
+  # Server-side perf and detector diagnostics (written on the drone under `./logs/`).
+  fps_detail_log_path: ./logs/fps_detail.log
+  track3d_hole_log_path: ./logs/track3d_hole.log
+  track3d_plane_log_path: ./logs/track3d_plane.log
+object_tracker:
+  enable: true
+  cuda_opencv: false
+  dynamic_grid: true
+  grid_min_size: [10, 10]
+  grid_max_size: [16, 16]
+  good_point_frac_min: 0.35
+  good_point_frac_max: 0.80
+detector:
+  enable: false   # YOLO OFF for indoor experiment
+  model: yolo11m.pt
+  det_period_s: 0.1
+  # Keep recent detections to make GUI selection robust (user can click a box that disappears next tick).
+  select_cache_s: 2.0
+  select_pending_log_s: 1.0
+  conf_thres: 0.15
+  iou_thres: 0.45
+  device: cuda:0
+  max_det: 50
+  scale: 1.0
+  bbox_pad_px: 3   # GUI-only padding per side for YOLO bbox rendering
+tracker:
+  enable: true
+  timeouts:
+    lost_s: 3.0               # after this, mark tracking as lost
+    cancel_after_lost_s: 6.0  # after this, force cancel tracking
+mav_control:
+  enable: true
+  dry_run: false
+  axis_map: xy
+  force_center_when_no_raw: true
+  passthrough:
+    enable: false
+    axis_map:
+      x: 2   # pitch
+      y: 1   # roll
+      z: 3   # throttle
+      r: 4   # yaw
+  rc_gate:
+    channel: 8
+    require_remote_enable: true
+    off_max: 0.33
+    align_min: 0.30
+    align_max: 0.66
+
+  PID_MOVE:
+    auto_exit:
+      enabled: true
+      max_bbox_area_ratio: 0.80   # Stop tracking when bbox area >= 80% of image (prevents driving into target)
+    mode_gate:
+      allow_in_alt_hold: true
+      allow_in_pos_hold: false
+      allow_in_all_modes: true
+    pitch:
+      enabled: true
+      kp: 0.55
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.1
+      soft_start_gamma: 0.5
+      enable_gamma: false
+    yaw:
+      enabled: true
+      kp: 1
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.1
+      soft_start_gamma: 1.5
+      enable_gamma: false
+    roll:
+      enabled: false
+      kp: 0.1
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 2.0
+      soft_start_gamma: 1.5
+      enable_gamma: false
+    thrust:
+      enabled: true
+      min_value: 0.0
+      max_value: 0.3
+      ramp_time_s: 0.3
+      down_ramp_time_s: 3.0   # after max_bbox_area stop: keep max thrust for this many seconds
+
+  PID_ALIGN:
+    mode_gate:
+      allow_in_alt_hold: true
+      allow_in_pos_hold: false
+      allow_in_all_modes: true
+    pitch:
+      enabled: true
+      kp: 0.55
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.5
+      soft_start_gamma: 0.5
+      enable_gamma: false
+    yaw:
+      enabled: true
+      kp: 1.0
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.6
+      soft_start_gamma: 1.5
+      enable_gamma: true
+    roll:
+      enabled: false
+      kp: 1.0
+      ki: 0.0
+      kd: 0.0
+      deadband_norm: 0.01
+      soft_start_s: 0.5
+      soft_start_gamma: 1.5
+      enable_gamma: false
+    thrust:
+      enabled: false
+      min_value: 0.0
+      max_value: 0.3
+      ramp_time_s: 0.1
+      down_ramp_time_s: 0.0   # no thrust hold in PID_ALIGN
+    auto_exit:
+      enabled: false
+      delta_horizontal_deg: 1.5   # Stop when |yaw_err| <= this (deg)
+      delta_vertical_deg: 1.5     # Stop when |pitch_err| <= this (deg)
+
+# Optional per-tracker PID overrides.
+# When the GUI enables the 2D ROI tracker (`type="track2d_enable"`), the server applies this dict
+# on top of `mav_control` (same schema: PID_MOVE/PID_ALIGN/etc).
+2d_tracker_pid: {}
+recorder:
+  enable: false
+  encoder: nvjpeg
+  every_n_frames: 1
+  jpeg_quality: 60
+  root_img_directory: ./img
+  queue_depth: 20

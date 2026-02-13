@@ -1,0 +1,52 @@
+{
+  "provider": "maptiler",
+  "api_key": "aSKsVAEq22IfzuZ5ZQM8",
+
+  "default_location": { "lat": 30.91526, "lon": 34.423723 },
+
+  "mode": "north_up",
+  "follow": true,
+  "zoom": 17,
+  "min_zoom": 3,
+  "max_zoom": 19,
+
+  "auto_download": false,
+  "selected_style": "satellite",
+
+  "styles": [
+    {
+      "id": "streets",
+      "label": "Streets",
+      "template": "https://api.maptiler.com/tiles/streets-v2/{z}/{x}/{y}.png?key=${API_KEY}",
+      "attribution": "© OpenStreetMap contributors, tiles © MapTiler",
+      "transparent": false
+    },
+    {
+      "id": "satellite",
+      "label": "Satellite",
+      "template": "https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg?key=${API_KEY}",
+      "attribution": "Imagery © MapTiler",
+      "transparent": false
+    },
+    {
+      "id": "outdoor",
+      "label": "Outdoor",
+      "template": "https://api.maptiler.com/tiles/outdoor-v2/{z}/{x}/{y}.png?key=${API_KEY}",
+      "attribution": "© OpenStreetMap contributors, tiles © MapTiler",
+      "transparent": false
+    },
+    {
+      "id": "topo",
+      "label": "Topography",
+      "template": "https://api.maptiler.com/tiles/topo-v2/{z}/{x}/{y}.png?key=${API_KEY}",
+      "attribution": "© OpenStreetMap contributors, tiles © MapTiler",
+      "transparent": false
+    }
+  ],
+
+  "cache": {
+    "enabled": true,
+    "dir": "tile_cache",
+    "max_bytes": 2147483648
+  }
+}

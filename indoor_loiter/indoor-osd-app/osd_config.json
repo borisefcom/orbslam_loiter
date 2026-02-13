@@ -1,0 +1,191 @@
+{
+  "mavlink": { "endpoint": "udpin:0.0.0.0:14550" },
+  "sticks": {
+    "size_px": [90, 90],    
+    "gap": 16,              
+    "left":  { "pos": [820, 960] }
+  },
+  "elements": [
+    {
+      "type": "icon_text",
+      "enabled": true,
+      "file": "speed_wtfosd.png",
+      "x": 40,
+      "y": 20,
+      "size_px": [64, 64],
+      "source": "groundspeed",
+      "fmt": "{value:.1f} m/s",
+      "font_scale": 1.3,
+      "color_rgba": [1, 1, 1, 1],
+      "box": true
+    },
+    {
+      "type": "icon_text",
+      "enabled": true,
+      "file": "alt_wtfosd.png",
+      "x": 40,
+      "y": 105,
+      "size_px": [64, 64],
+      "lines": [
+        { "source": "alt_m", "fmt": "{value:.1f} m" },
+        { "source": "climb_ms", "fmt": "{value:+.2f} m/s" }
+      ],
+      "font_scale": 1.2,
+      "color_rgba": [1, 1, 1, 1],
+      "box": true
+    },
+    {
+      "type": "icon_text",
+      "enabled": true,
+      "file": "drone_wtfosd.png",
+      "x": 1400,
+      "y": 20,
+      "size_px": [64, 64],
+      "lines": [
+        { "source": "heading_deg", "fmt": "HDG {value:.0f}°" },
+        { "source": "mode", "fmt": "MODE {value}" }
+      ],
+      "font_scale": 1.2,
+      "color_rgba": [1, 1, 1, 1],
+      "box": true
+    },
+    {
+      "type": "icon_text",
+      "enabled": true,
+      "file": "bat80_evilm1.png",
+      "x": 40,
+      "y": 900,
+      "size_px": [64, 64],
+      "lines": [
+        { "source": "battery_v", "fmt": "{value:.1f} V" },
+        { "source": "current_a", "fmt": "{value:.1f} A" },
+        { "source": "battery_remaining_pct", "fmt": "{value}%" }
+      ],
+      "font_scale": 1.2,
+      "color_rgba": [1, 1, 1, 1],
+      "box": true
+    },
+    {
+      "type": "icon_text",
+      "enabled": true,
+      "file": "roll_wtfosd.png",
+      "x": 40,
+      "y": 360,
+      "size_px": [64, 64],
+      "source": "roll_deg",
+      "fmt": "{value:.1f} deg",
+      "font_scale": 1.1,
+      "color_rgba": [1, 1, 1, 1],
+      "box": true
+    },
+    {
+      "type": "icon_text",
+      "enabled": true,
+      "file": "pitch_wtfosd.png",
+      "x": 40,
+      "y": 445,
+      "size_px": [64, 64],
+      "source": "pitch_deg",
+      "fmt": "{value:.1f} deg",
+      "font_scale": 1.1,
+      "color_rgba": [1, 1, 1, 1],
+      "box": true
+    },
+    {
+      "type": "icon_text",
+      "enabled": true,
+      "file": "fly_wtfosd_origin.png",
+      "x": 40,
+      "y": 530,
+      "size_px": [64, 64],
+      "source": "yaw_deg",
+      "fmt": "{value:.1f} deg",
+      "font_scale": 1.1,
+      "color_rgba": [1, 1, 1, 1],
+      "box": true
+    },
+    {
+      "type": "icon_text",
+      "enabled": false,
+      "file": "speed_wtfosd.png",
+      "x": 460,
+      "y": 400,
+      "size_px": [64, 64],
+      "lines": [
+        { "source": "rc_roll", "fmt": "RC Roll {value:+.2f}" },
+        { "source": "rc_pitch", "fmt": "RC Pitch {value:+.2f}" },
+        { "source": "rc_yaw", "fmt": "RC Yaw {value:+.2f}" },
+        { "source": "rc_throttle", "fmt": "RC Thr {value:+.2f}" }
+      ],
+      "font_scale": 1.0,
+      "color_rgba": [1, 1, 1, 1],
+      "box": true
+    },
+    {
+    "type": "icon_text",
+    "enabled": true,
+    "x": 40,
+    "y": 710,
+    "size_px": [64, 148],
+    "box": true,
+    "font_scale": 1.1,
+    "color_rgba": [1, 1, 1, 1],
+    "file": "drone_wtfosd.png",
+    "lines": [
+      { "source": "sys_cpu1", "fmt": "CPU1: {value}%" },
+      { "source": "sys_cpu2", "fmt": "CPU2: {value}%" },
+      { "source": "sys_cpu3", "fmt": "CPU3: {value}%" },
+      { "source": "sys_cpu4", "fmt": "CPU4: {value}%" },
+      { "source": "sys_mem",  "fmt": "Mem: {value}%" },
+      { "source": "sys_swap", "fmt": "Swap: {value}%" }
+    ]
+  },
+  {
+  "type": "icon_text",
+  "enabled": true,
+  "x": 40,
+  "y": 210,
+  "size_px": [64, 84],
+  "box": true,
+  "font_scale": 1.1,
+  "color_rgba": [1, 1, 1, 1],
+  "file": "icon_vis.png",
+  "lines": [
+    { "source": "vis_x", "fmt": "X: {value}" },
+    { "source": "vis_y", "fmt": "Y: {value}" },
+    { "source": "vis_z", "fmt": "Z: {value}" }
+  ]
+  },
+  {
+    "type": "icon_text",
+    "enabled": true,
+    "file": "gps_lock_wtfosd.png",
+    "x": 1250,
+    "y": 990,
+    "size_px": [64, 64],
+    "lines": [
+      { "source": "gps_sats", "fmt": "Sats {value}" },
+      { "source": "gps_fix", "fmt": "Fix {value}" },
+      { "source": "hdop", "fmt": "HDOP {value:.2f}" }
+    ],
+    "font_scale": 1.1,
+    "color_rgba": [1, 1, 1, 1],
+    "box": true
+  },
+  {
+    "type": "icon_text",
+    "enabled": true,
+    "file": "gps_location_wtfosd.png",
+    "x": 1250,
+    "y": 900,
+    "size_px": [64, 64],
+    "lines": [
+      { "source": "lat", "fmt": "Lat {value}" },
+      { "source": "lon", "fmt": "Lon {value}" }
+    ],
+    "font_scale": 1.1,
+    "color_rgba": [1, 1, 1, 1],
+    "box": true
+  }
+]
+}
